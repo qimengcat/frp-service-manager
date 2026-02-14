@@ -1,0 +1,83 @@
+<service>
+    <!-- 服务唯一标识，安装后注册到Windows服务管理器的名称，不可重复 -->
+    <id>frpc</id>
+    
+    <!-- 服务显示名称，在services.msc中看到的中文名 -->
+    <name>frp客户端</name>
+    
+    <!-- 服务描述，services.msc中双击服务看到的详细说明 -->
+    <description>frp客户端，为此计算机提供公网穿透访问服务</description>
+    
+    <!-- 服务运行账户：NT AUTHORITY是系统内置账户命名空间 -->
+    <serviceaccount>
+        <!-- 账户域，NT AUTHORITY表示系统本地账户 -->
+        <domain>NT AUTHORITY</domain>
+        <!-- 用户名：LocalService比SYSTEM权限低，但有网络访问权限，适合frpc -->
+        <user>LocalService</user>
+        <!-- 允许该账户作为服务登录（Windows安全策略要求） -->
+        <allowservicelogon>true</allowservicelogon>
+    </serviceaccount>
+    
+    <!-- 设置环境变量：HOME指向frpc.exe所在目录，避免frpc生成临时文件时找不到路径 -->
+    <env name="HOME" value="%BASE%"/>
+    
+    <!-- 指定要运行的程序：%BASE%代表winsw.exe所在目录（即frpc.exe同级目录） -->
+    <executable>%BASE%\frpc.exe</executable>
+    
+    <!-- 传递给frpc.exe的命令行参数：指定使用当前目录下的frpc.toml配置文件 -->
+    <arguments>-c .\frpc.toml</arguments>
+    
+    <!-- 设置工作目录为服务程序所在位置，确保.\frpc.toml能正确解析 -->
+    <workingdirectory>%BASE%</workingdirectory>
+    
+    <!-- 开机自启模式：Automatic表示系统启动时自动运行服务 -->
+    <startmode>Automatic</startmode>
+    
+    <!-- 延迟启动：等系统其他核心服务启动完成后再启动frpc，避免网络未就绪导致连接失败 -->
+    <delayedAutoStart/>
+    
+    <!-- 依赖TCP/IP协议栈：确保网络驱动加载完成才启动frpc -->
+    <depend>Tcpip</depend>
+    
+    <!-- 依赖网络位置感知服务：确保系统判断网络已连接才启动（避免开机时frpc认为无网络而退出） -->
+    <depend>NlaSvc</depend>
+    
+    <!-- 第一次故障（frpc崩溃/退出）后等待10秒自动重启 -->
+    <onfailure action="restart" delay="10 sec"/>
+    
+    <!-- 第二次故障后等待20秒重启（指数退避，避免频繁重启占用CPU） -->
+    <onfailure action="restart" delay="20 sec"/>
+    
+    <!-- 第三次及以后故障等待60秒重启，给系统恢复时间 -->
+    <onfailure action="restart" delay="60 sec"/>
+    
+    <!-- 1小时内如果没有再发生故障，重置故障计数器（恢复为第一次重启的间隔） -->
+    <resetfailure>1 hour</resetfailure>
+    
+    <!-- 停止服务时的等待时间：给frpc 30秒时间优雅断开与frps的连接，避免强制杀进程导致连接残留 -->
+    <stoptimeout>30 sec</stoptimeout>
+    
+    <!-- 先停止父进程（winsw托管进程），确保子进程(frpc)能正确接收停止信号 -->
+    <stopparentprocessfirst>true</stopparentprocessfirst>
+    
+    <!-- 日志文件存放目录，%BASE%指winsw.exe所在文件夹 -->
+    <logpath>%BASE%\logs</logpath>
+    
+    <!-- 日志模式：按大小和时间滚动，避免单日志文件过大占满磁盘 -->
+    <log mode="roll-by-size-time">
+        <!-- 单个日志文件大小阈值：10MB（10240KB），超过则创建新文件 -->
+        <sizeThreshold>10240</sizeThreshold>
+        
+        <!-- 日志文件名日期格式：如 frpc.20240212.log -->
+        <pattern>yyyyMMdd</pattern>
+        
+        <!-- 每天凌晨0点自动创建新日志文件，方便按天查看 -->
+        <autoRollAtTime>00:00:00</autoRollAtTime>
+        
+        <!-- 5天前的旧日志自动压缩成zip，节省磁盘空间 -->
+        <zipOlderThanNumDays>5</zipOlderThanNumDays>
+        
+        <!-- 压缩包日期命名格式：如 frpc.20240207.zip -->
+        <zipDateFormat>yyyyMMdd</zipDateFormat>
+    </log>
+</service>
