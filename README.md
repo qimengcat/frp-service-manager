@@ -83,12 +83,12 @@
        # FRP 客户端配置文件
        # 请根据实际情况修改以下配置
        
-       serverAddr = "47.108.208.91"      # 服务器地址，改为实际IP或域名
+       serverAddr = "your-server-ip.com"      # 服务器地址，改为实际IP或域名
        serverPort = 7000                      # 服务器端口，默认7000
        
        # 认证配置
        auth.method = "token"
-       auth.token = "QImeng9420"         # 认证令牌，向管理员获取
+       auth.token = "your-token-here"         # 认证令牌，向管理员获取
        
        # 日志配置
        log.to = "./logs/frpc.log"
@@ -99,13 +99,6 @@
        transport.tls.enable = true
        
        # 端口映射配置，可添加多个[[proxies]]
-       [[proxies]]
-       name = "dxfsheji-tcp"
-       type = "tcp"
-       localIP = "127.0.0.1"
-       localPort = 3389
-       remotePort = 6010
-       
        [[proxies]]
        name = "ssh"                           # 规则名称
        type = "tcp"                          # 协议类型
@@ -122,7 +115,7 @@
        # customDomains = ["your-domain.com"]
        
        ```
-
+   
 3. #### frpc-WinSW.exe
 
    类型: 可执行程序 (Windows服务包装器)
